@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dash Runner</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="Dash Runner game">
+      <canvas id="game" width="1280" height="720" aria-label="Dash Runner play field"></canvas>
+
+      <section class="hud" aria-live="polite">
+        <div class="stat">
+          <span class="stat-label">SCORE</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="progress" aria-label="Level progress">
+          <span id="progressFill"></span>
+        </div>
+        <div class="stat right">
+          <span class="stat-label">BEST</span>
+          <strong id="best">0</strong>
+        </div>
+      </section>
+
+      <section id="menu" class="overlay visible">
+        <div class="panel">
+          <p class="eyebrow">rhythm platformer</p>
+          <h1>Dash Runner</h1>
+          <p class="tagline">한 번 누르면 뛰고, 늦으면 산산조각.</p>
+          <button id="startButton" class="primary-button" type="button">시작</button>
+        </div>
+      </section>
+
+      <section id="result" class="overlay">
+        <div class="panel compact">
+          <p id="resultKicker" class="eyebrow">crashed</p>
+          <h2 id="resultTitle">다시 달려볼까요?</h2>
+          <p id="resultScore" class="tagline">score 0</p>
+          <button id="restartButton" class="primary-button" type="button">재시작</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
