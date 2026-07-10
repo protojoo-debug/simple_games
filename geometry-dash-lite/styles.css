@@ -81,7 +81,7 @@ canvas {
   color: var(--muted);
   font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 
 .stat strong {
@@ -95,6 +95,19 @@ canvas {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.09);
   overflow: hidden;
+}
+
+.stage-progress {
+  display: grid;
+  gap: 6px;
+}
+
+.stage-name {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-align: center;
 }
 
 .progress span {
@@ -129,13 +142,71 @@ canvas {
 }
 
 .panel {
-  width: min(520px, 100%);
+  width: min(620px, 100%);
   padding: 32px;
   border: 1px solid var(--line);
   background: var(--panel);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(18px);
   text-align: center;
+}
+
+.stage-select {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 22px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.stage-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 0;
+  background: rgba(12, 12, 20, 0.96);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.stage-button strong {
+  color: var(--gold);
+  font-size: 1.15rem;
+}
+
+.stage-button span {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-button small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+
+.stage-button.selected {
+  background: rgba(45, 226, 191, 0.15);
+  color: var(--ink);
+  box-shadow: inset 0 -3px 0 var(--mint);
+}
+
+.stage-button:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid var(--mint);
+  outline-offset: -3px;
 }
 
 .panel.compact {
@@ -147,7 +218,7 @@ canvas {
   color: var(--mint);
   font-size: 0.72rem;
   font-weight: 900;
-  letter-spacing: 0.16em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -218,6 +289,14 @@ h2 {
 
   .panel {
     padding: 26px 20px;
+  }
+
+  .stage-select {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-button {
+    min-height: 58px;
   }
 
   h1 {

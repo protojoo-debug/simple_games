@@ -3,6 +3,7 @@ const ctx = canvas.getContext("2d");
 
 const scoreEl = document.querySelector("#score");
 const bestEl = document.querySelector("#best");
+const stageNameEl = document.querySelector("#stageName");
 const progressFill = document.querySelector("#progressFill");
 const menu = document.querySelector("#menu");
 const result = document.querySelector("#result");
@@ -11,6 +12,7 @@ const resultTitle = document.querySelector("#resultTitle");
 const resultScore = document.querySelector("#resultScore");
 const startButton = document.querySelector("#startButton");
 const restartButton = document.querySelector("#restartButton");
+const stageButtons = [...document.querySelectorAll(".stage-button")];
 
 const player = {
   x: 170,
@@ -22,48 +24,181 @@ const player = {
   grounded: true,
 };
 
-const level = {
-  length: 7800,
-  obstacles: [
-    { x: 760, type: "spike" },
-    { x: 1090, type: "spike" },
-    { x: 1380, type: "block", width: 52, height: 52 },
-    { x: 1730, type: "spike" },
-    { x: 1878, type: "spike" },
-    { x: 2320, type: "block", width: 62, height: 72 },
-    { x: 2660, type: "spike" },
-    { x: 2810, type: "spike" },
-    { x: 3180, type: "block", width: 56, height: 92 },
-    { x: 3630, type: "spike" },
-    { x: 3910, type: "block", width: 118, height: 44 },
-    { x: 4350, type: "spike" },
-    { x: 4496, type: "spike" },
-    { x: 4850, type: "block", width: 68, height: 72 },
-    { x: 5190, type: "spike" },
-    { x: 5500, type: "spike" },
-    { x: 5650, type: "spike" },
-    { x: 6060, type: "block", width: 72, height: 96 },
-    { x: 6450, type: "spike" },
-    { x: 6750, type: "block", width: 140, height: 48 },
-    { x: 7220, type: "spike" },
-  ],
-};
+const BEAT_DISTANCE = 180;
+
+function atBeat(beat, type, options = {}) {
+  return { x: beat * BEAT_DISTANCE, type, ...options };
+}
+
+const stages = [
+  {
+    id: "neon-start",
+    number: 1,
+    name: "Neon Start",
+    bpm: 120,
+    beats: 36,
+    audioRoot: 164.81,
+    theme: {
+      skyA: "#191022", skyB: "#132236", skyC: "#2b1726",
+      mountainA: "#24233a", mountainB: "#171a2a",
+      hot: "#ff4f6d", gold: "#ffd166", mint: "#2de2bf", accent: "#7c5cff",
+    },
+    obstacles: [
+      atBeat(4, "spike"), atBeat(6, "spike"),
+      atBeat(8, "block", { width: 108, height: 52 }),
+      atBeat(11, "spike"), atBeat(12, "spike"),
+      atBeat(15, "block", { width: 132, height: 72 }),
+      atBeat(18, "spike"),
+      atBeat(20, "block", { width: 112, height: 92 }),
+      atBeat(23, "spike"), atBeat(24, "spike"),
+      atBeat(27, "block", { width: 162, height: 48 }),
+      atBeat(30, "spike"),
+      atBeat(32, "block", { width: 126, height: 78 }),
+      atBeat(34, "spike"),
+    ],
+  },
+  {
+    id: "pulse-circuit",
+    number: 2,
+    name: "Pulse Circuit",
+    bpm: 132,
+    beats: 40,
+    audioRoot: 196,
+    theme: {
+      skyA: "#071d24", skyB: "#173044", skyC: "#30172d",
+      mountainA: "#183747", mountainB: "#10222d",
+      hot: "#ff6b6b", gold: "#d9f45b", mint: "#39e6c2", accent: "#4b7bec",
+    },
+    obstacles: [
+      atBeat(4, "spike"), atBeat(5.5, "spike"),
+      atBeat(8, "block", { width: 150, height: 54 }),
+      atBeat(10.5, "spike"), atBeat(11, "spike"),
+      atBeat(14, "block", { width: 108, height: 86 }),
+      atBeat(16.5, "spike"),
+      atBeat(19, "block", { width: 176, height: 50 }),
+      atBeat(22, "spike"), atBeat(22.5, "spike"),
+      atBeat(25, "block", { width: 116, height: 104 }),
+      atBeat(28, "spike"),
+      atBeat(30, "block", { width: 164, height: 62 }),
+      atBeat(33, "spike"), atBeat(33.5, "spike"),
+      atBeat(36, "block", { width: 120, height: 92 }),
+      atBeat(38, "spike"),
+    ],
+  },
+  {
+    id: "hyper-drive",
+    number: 3,
+    name: "Hyper Drive",
+    bpm: 144,
+    beats: 44,
+    audioRoot: 220,
+    theme: {
+      skyA: "#220d2c", skyB: "#102a3b", skyC: "#36131f",
+      mountainA: "#3c2147", mountainB: "#182334",
+      hot: "#ff3d81", gold: "#ffe45c", mint: "#29d9ff", accent: "#9b5de5",
+    },
+    obstacles: [
+      atBeat(4, "spike"), atBeat(5, "spike"),
+      atBeat(7, "block", { width: 118, height: 64 }),
+      atBeat(9.5, "spike"), atBeat(10, "spike"),
+      atBeat(12.5, "block", { width: 178, height: 48 }),
+      atBeat(15.5, "spike"),
+      atBeat(17, "block", { width: 110, height: 108 }),
+      atBeat(20, "spike"), atBeat(20.5, "spike"),
+      atBeat(23, "block", { width: 150, height: 72 }),
+      atBeat(25.5, "spike"), atBeat(26, "spike"),
+      atBeat(28.5, "block", { width: 118, height: 112 }),
+      atBeat(31.5, "spike"),
+      atBeat(34, "block", { width: 190, height: 54 }),
+      atBeat(37, "spike"), atBeat(37.5, "spike"),
+      atBeat(40, "block", { width: 126, height: 94 }),
+      atBeat(42, "spike"),
+    ],
+  },
+  {
+    id: "skyline-steps",
+    number: 4,
+    name: "Skyline Steps",
+    bpm: 132,
+    beats: 46,
+    audioRoot: 246.94,
+    theme: {
+      skyA: "#10233a", skyB: "#173f4b", skyC: "#3b1835",
+      mountainA: "#29445a", mountainB: "#172d3d",
+      hot: "#ff5d8f", gold: "#f8e16c", mint: "#62e6a7", accent: "#4ea8de",
+    },
+    obstacles: [
+      atBeat(4, "block", { width: 198, height: 42, elevation: 42 }),
+      atBeat(4.35, "spike"),
+      atBeat(6, "block", { width: 184, height: 42, elevation: 58 }),
+      atBeat(6.35, "spike"),
+      atBeat(8, "block", { width: 216, height: 42, elevation: 38 }),
+      atBeat(8.45, "spike"),
+      atBeat(11.5, "spike"),
+      atBeat(14, "block", { width: 210, height: 44, elevation: 46 }),
+      atBeat(14.4, "spike"),
+      atBeat(16.25, "block", { width: 178, height: 42, elevation: 68 }),
+      atBeat(16.55, "spike"),
+      atBeat(18.25, "block", { width: 232, height: 44, elevation: 48 }),
+      atBeat(18.65, "spike"),
+      atBeat(22, "spike"), atBeat(22.5, "spike"),
+      atBeat(25, "block", { width: 220, height: 42, elevation: 54 }),
+      atBeat(25.4, "spike"),
+      atBeat(27.25, "block", { width: 182, height: 42, elevation: 72 }),
+      atBeat(27.55, "spike"),
+      atBeat(29.25, "block", { width: 238, height: 42, elevation: 44 }),
+      atBeat(29.65, "spike"),
+      atBeat(33, "spike"),
+      atBeat(35.5, "block", { width: 190, height: 44, elevation: 62 }),
+      atBeat(35.85, "spike"),
+      atBeat(37.5, "block", { width: 206, height: 42, elevation: 42 }),
+      atBeat(37.9, "spike"),
+      atBeat(41, "spike"), atBeat(41.5, "spike"),
+      atBeat(44, "block", { width: 170, height: 42, elevation: 56 }),
+    ],
+  },
+];
 
 let view = { width: 1280, height: 720, ground: 530, dpr: 1 };
 let state = "menu";
+let selectedStageIndex = 0;
+let currentStage = stages[selectedStageIndex];
 let distance = 0;
-let speed = 360;
+let speed = getStageSpeed(currentStage);
 let score = 0;
-let best = Number(localStorage.getItem("dash-runner-best") || 0);
+let bestScores = loadBestScores();
+let best = Number(bestScores[currentStage.id] || 0);
 let lastTime = 0;
 let particles = [];
 let beatPulse = 0;
 let beatIndex = 0;
 let audio = null;
 let nextBeatAt = 0;
+let stageStartedAt = null;
 let inputHeld = false;
+let resultAction = "restart";
 
 bestEl.textContent = best;
+stageNameEl.textContent = getStageLabel(currentStage);
+
+function getStageSpeed(stage) {
+  return BEAT_DISTANCE * (stage.bpm / 60);
+}
+
+function getStageLabel(stage) {
+  return `STAGE ${stage.number} · ${stage.name.toUpperCase()} · ${stage.bpm} BPM`;
+}
+
+function loadBestScores() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("dash-runner-stage-bests") || "{}");
+    const legacyBest = Number(localStorage.getItem("dash-runner-best") || 0);
+    if (!saved[stages[0].id] && legacyBest) saved[stages[0].id] = legacyBest;
+    return saved;
+  } catch {
+    return {};
+  }
+}
 
 function resize() {
   const rect = canvas.getBoundingClientRect();
@@ -84,7 +219,7 @@ function resize() {
 
 function resetGame() {
   distance = 0;
-  speed = 360;
+  speed = getStageSpeed(currentStage);
   score = 0;
   particles = [];
   beatPulse = 0;
@@ -101,9 +236,26 @@ function resetGame() {
 function startGame() {
   resetGame();
   state = "playing";
+  stageStartedAt = performance.now() / 1000 + 0.08;
   menu.classList.remove("visible");
   result.classList.remove("visible");
   startAudio();
+}
+
+function selectStage(index) {
+  selectedStageIndex = Math.max(0, Math.min(stages.length - 1, index));
+  currentStage = stages[selectedStageIndex];
+  best = Number(bestScores[currentStage.id] || 0);
+  bestEl.textContent = best;
+  stageNameEl.textContent = getStageLabel(currentStage);
+
+  for (const button of stageButtons) {
+    const selected = Number(button.dataset.stage) === selectedStageIndex;
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  }
+
+  resetGame();
 }
 
 function finishGame() {
@@ -111,8 +263,10 @@ function finishGame() {
   updateBest();
   stopAudio();
   resultKicker.textContent = "complete";
-  resultTitle.textContent = "완주 성공";
+  resultTitle.textContent = `${currentStage.name} 완주`;
   resultScore.textContent = `score ${score}`;
+  resultAction = selectedStageIndex < stages.length - 1 ? "next" : "restart";
+  restartButton.textContent = resultAction === "next" ? "다음 스테이지" : "다시 플레이";
   result.classList.add("visible");
 }
 
@@ -124,14 +278,17 @@ function crash() {
   stopAudio();
   resultKicker.textContent = "crashed";
   resultTitle.textContent = "다시 달려볼까요?";
-  resultScore.textContent = `score ${score}`;
+  resultScore.textContent = `${Math.floor((distance / (currentStage.beats * BEAT_DISTANCE)) * 100)}% · score ${score}`;
+  resultAction = "restart";
+  restartButton.textContent = "다시 플레이";
   result.classList.add("visible");
 }
 
 function updateBest() {
   if (score <= best) return;
   best = score;
-  localStorage.setItem("dash-runner-best", String(best));
+  bestScores[currentStage.id] = best;
+  localStorage.setItem("dash-runner-stage-bests", JSON.stringify(bestScores));
   bestEl.textContent = best;
 }
 
@@ -153,20 +310,25 @@ function startAudio() {
   if (audio.state === "suspended") {
     audio.resume();
   }
-  nextBeatAt = audio.currentTime + 0.05;
+  nextBeatAt = audio.currentTime + 0.08;
 }
 
 function stopAudio() {
   nextBeatAt = 0;
+  stageStartedAt = null;
 }
 
 function scheduleBeat() {
   if (!audio || state !== "playing") return;
   const now = audio.currentTime;
-  const beatLength = 60 / 132;
+  const beatLength = 60 / currentStage.bpm;
   while (nextBeatAt && nextBeatAt < now + 0.08) {
     const accent = beatIndex % 4 === 0;
-    const frequency = accent ? 164.81 : beatIndex % 2 === 0 ? 246.94 : 196;
+    const frequency = accent
+      ? currentStage.audioRoot
+      : beatIndex % 2 === 0
+        ? currentStage.audioRoot * 1.5
+        : currentStage.audioRoot * 1.2;
     playBlip(frequency, accent ? 0.08 : 0.045, accent ? "sawtooth" : "square", accent ? 0.06 : 0.035, nextBeatAt);
     beatPulse = accent ? 1 : 0.55;
     beatIndex += 1;
@@ -215,14 +377,19 @@ function update(delta) {
 
   scheduleBeat();
 
-  const progress = Math.min(distance / level.length, 1);
-  speed = 360 + progress * 95;
-  distance += speed * delta;
+  const stageLength = currentStage.beats * BEAT_DISTANCE;
+  if (stageStartedAt !== null) {
+    distance = Math.max(0, (performance.now() / 1000 - stageStartedAt) * speed);
+  } else {
+    distance += speed * delta;
+  }
+  const progress = Math.min(distance / stageLength, 1);
   score = Math.floor(distance / 12);
   scoreEl.textContent = score;
   progressFill.style.width = `${Math.floor(progress * 100)}%`;
 
   player.previousY = player.y;
+  player.grounded = false;
   player.velocityY += 2350 * delta;
   player.y += player.velocityY * delta;
 
@@ -232,9 +399,10 @@ function update(delta) {
     player.grounded = true;
   }
 
-  if (inputHeld && player.grounded) {
-    jump();
-  }
+  checkCollisions();
+  if (state !== "playing") return;
+
+  if (inputHeld && player.grounded) jump();
 
   if (!player.grounded) {
     player.rotation += delta * speed * 0.015;
@@ -244,10 +412,10 @@ function update(delta) {
 
   emitTrail(delta);
   updateParticles(delta);
-  checkCollisions();
   beatPulse = Math.max(0, beatPulse - delta * 2.6);
 
-  if (distance >= level.length) {
+  if (distance >= stageLength) {
+    progressFill.style.width = "100%";
     finishGame();
   }
 }
@@ -285,12 +453,13 @@ function checkCollisions() {
     height: player.size - 8,
   };
 
-  for (const obstacle of level.obstacles) {
+  for (const obstacle of currentStage.obstacles) {
     const width = obstacle.width ?? 42;
     const height = obstacle.height ?? 42;
+    const elevation = obstacle.elevation ?? 0;
     const rect = {
       x: obstacle.x,
-      y: view.ground - height,
+      y: view.ground - height - elevation,
       width,
       height,
     };
@@ -306,6 +475,25 @@ function checkCollisions() {
         crash();
         return;
       }
+      continue;
+    }
+
+    const horizontalOverlap =
+      playerRect.x < rect.x + rect.width &&
+      playerRect.x + playerRect.width > rect.x;
+    const previousBottom = player.previousY + player.size;
+    const currentBottom = player.y + player.size;
+    const landedOnTop =
+      horizontalOverlap &&
+      player.velocityY >= 0 &&
+      previousBottom <= rect.y + 6 &&
+      currentBottom >= rect.y;
+
+    if (landedOnTop) {
+      player.y = rect.y - player.size;
+      player.velocityY = 0;
+      player.grounded = true;
+      playerRect.y = player.y + 4;
       continue;
     }
 
@@ -335,10 +523,11 @@ function draw() {
 
 function drawBackground() {
   const pulse = beatPulse * 18;
+  const theme = currentStage.theme;
   const sky = ctx.createLinearGradient(0, 0, view.width, view.height);
-  sky.addColorStop(0, "#191022");
-  sky.addColorStop(0.45, "#132236");
-  sky.addColorStop(1, "#2b1726");
+  sky.addColorStop(0, theme.skyA);
+  sky.addColorStop(0.45, theme.skyB);
+  sky.addColorStop(1, theme.skyC);
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, view.width, view.height);
 
@@ -347,16 +536,17 @@ function drawBackground() {
   drawSun(view.width * 0.78, view.height * 0.24, 62 + pulse);
   ctx.restore();
 
-  drawMountains(0.12, "#24233a", 0.32);
-  drawMountains(0.2, "#171a2a", 0.52);
+  drawMountains(0.12, theme.mountainA, 0.32);
+  drawMountains(0.2, theme.mountainB, 0.52);
   drawGrid();
 }
 
 function drawSun(x, y, radius) {
+  const theme = currentStage.theme;
   const gradient = ctx.createRadialGradient(x, y, radius * 0.1, x, y, radius);
-  gradient.addColorStop(0, "rgba(255, 209, 102, 0.85)");
-  gradient.addColorStop(0.54, "rgba(255, 79, 109, 0.34)");
-  gradient.addColorStop(1, "rgba(255, 79, 109, 0)");
+  gradient.addColorStop(0, theme.gold);
+  gradient.addColorStop(0.54, theme.hot);
+  gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
   ctx.fillStyle = gradient;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -380,7 +570,8 @@ function drawMountains(rate, color, baseRatio) {
 
 function drawGrid() {
   const offset = -(distance * 0.58) % 64;
-  ctx.strokeStyle = "rgba(45, 226, 191, 0.16)";
+  ctx.strokeStyle = currentStage.theme.mint;
+  ctx.globalAlpha = 0.16;
   ctx.lineWidth = 1;
   for (let x = offset; x < view.width; x += 64) {
     ctx.beginPath();
@@ -400,43 +591,47 @@ function drawGrid() {
 }
 
 function drawTrack() {
+  const theme = currentStage.theme;
   const groundGradient = ctx.createLinearGradient(0, view.ground - 22, 0, view.height);
-  groundGradient.addColorStop(0, "#f7e6a1");
-  groundGradient.addColorStop(0.18, "#ff4f6d");
+  groundGradient.addColorStop(0, theme.gold);
+  groundGradient.addColorStop(0.18, theme.hot);
   groundGradient.addColorStop(0.22, "#2c1220");
   groundGradient.addColorStop(1, "#120d18");
   ctx.fillStyle = groundGradient;
   ctx.fillRect(0, view.ground - 22, view.width, view.height - view.ground + 22);
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
-  const tile = 54;
-  const offset = -(distance % tile);
-  for (let x = offset; x < view.width; x += tile) {
-    ctx.fillRect(x, view.ground - 18, 24, 5);
+  const halfBeat = BEAT_DISTANCE / 2;
+  const offset = -(distance % halfBeat);
+  for (let x = offset; x < view.width; x += halfBeat) {
+    const beatIndexAtX = Math.round((distance + x) / halfBeat);
+    ctx.fillRect(x, view.ground - 18, beatIndexAtX % 2 === 0 ? 32 : 16, 5);
   }
 }
 
 function drawObstacles() {
-  for (const obstacle of level.obstacles) {
+  for (const obstacle of currentStage.obstacles) {
     const x = obstacle.x - distance + player.x;
     if (x < -180 || x > view.width + 180) continue;
 
     if (obstacle.type === "spike") {
       drawSpike(x, view.ground);
     } else {
-      drawBlock(x, view.ground - obstacle.height, obstacle.width, obstacle.height);
+      const elevation = obstacle.elevation ?? 0;
+      drawBlock(x, view.ground - obstacle.height - elevation, obstacle.width, obstacle.height, elevation);
     }
   }
 }
 
 function drawSpike(x, groundY) {
+  const theme = currentStage.theme;
   ctx.save();
   ctx.shadowColor = "rgba(255, 79, 109, 0.6)";
   ctx.shadowBlur = 16;
   const gradient = ctx.createLinearGradient(x, groundY - 42, x, groundY);
   gradient.addColorStop(0, "#f9f4df");
-  gradient.addColorStop(0.44, "#ffd166");
-  gradient.addColorStop(1, "#ff4f6d");
+  gradient.addColorStop(0.44, theme.gold);
+  gradient.addColorStop(1, theme.hot);
   ctx.fillStyle = gradient;
   ctx.beginPath();
   ctx.moveTo(x, groundY);
@@ -450,14 +645,15 @@ function drawSpike(x, groundY) {
   ctx.restore();
 }
 
-function drawBlock(x, y, width, height) {
+function drawBlock(x, y, width, height, elevation = 0) {
+  const theme = currentStage.theme;
   ctx.save();
   ctx.shadowColor = "rgba(45, 226, 191, 0.38)";
   ctx.shadowBlur = 16;
   const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
-  gradient.addColorStop(0, "#2de2bf");
-  gradient.addColorStop(0.52, "#7c5cff");
-  gradient.addColorStop(1, "#ff4f6d");
+  gradient.addColorStop(0, theme.mint);
+  gradient.addColorStop(0.52, theme.accent);
+  gradient.addColorStop(1, theme.hot);
   ctx.fillStyle = gradient;
   ctx.fillRect(x, y, width, height);
   ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
@@ -465,6 +661,12 @@ function drawBlock(x, y, width, height) {
   ctx.strokeStyle = "rgba(13, 12, 20, 0.84)";
   ctx.lineWidth = 4;
   ctx.strokeRect(x, y, width, height);
+
+  if (elevation > 0) {
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = theme.mint;
+    ctx.fillRect(x + 8, y + height + 8, width - 16, 3);
+  }
   ctx.restore();
 }
 
@@ -562,6 +764,11 @@ function handleRelease(event) {
   inputHeld = false;
 }
 
+function handleResultAction() {
+  if (resultAction === "next") selectStage(selectedStageIndex + 1);
+  startGame();
+}
+
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", handlePress);
 window.addEventListener("keyup", handleRelease);
@@ -572,7 +779,10 @@ canvas.addEventListener("pointerdown", handlePress);
 canvas.addEventListener("pointerup", handleRelease);
 canvas.addEventListener("pointercancel", handleRelease);
 startButton.addEventListener("click", startGame);
-restartButton.addEventListener("click", startGame);
+restartButton.addEventListener("click", handleResultAction);
+for (const button of stageButtons) {
+  button.addEventListener("click", () => selectStage(Number(button.dataset.stage)));
+}
 
 resize();
 resetGame();

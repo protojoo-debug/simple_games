@@ -15,8 +15,11 @@
           <span class="stat-label">SCORE</span>
           <strong id="score">0</strong>
         </div>
-        <div class="progress" aria-label="Level progress">
-          <span id="progressFill"></span>
+        <div class="stage-progress">
+          <span id="stageName" class="stage-name">STAGE 1 · NEON START</span>
+          <div class="progress" aria-label="Level progress">
+            <span id="progressFill"></span>
+          </div>
         </div>
         <div class="stat right">
           <span class="stat-label">BEST</span>
@@ -28,7 +31,25 @@
         <div class="panel">
           <p class="eyebrow">rhythm platformer</p>
           <h1>Dash Runner</h1>
-          <p class="tagline">한 번 누르면 뛰고, 늦으면 산산조각.</p>
+          <p class="tagline">박자에 맞춰 달리고, 누르고 있으면 연속 점프.</p>
+          <div class="stage-select" role="group" aria-label="스테이지 선택">
+            <button class="stage-button selected" type="button" data-stage="0" aria-pressed="true">
+              <strong>01</strong>
+              <span>Neon Start<small>120 BPM</small></span>
+            </button>
+            <button class="stage-button" type="button" data-stage="1" aria-pressed="false">
+              <strong>02</strong>
+              <span>Pulse Circuit<small>132 BPM</small></span>
+            </button>
+            <button class="stage-button" type="button" data-stage="2" aria-pressed="false">
+              <strong>03</strong>
+              <span>Hyper Drive<small>144 BPM</small></span>
+            </button>
+            <button class="stage-button" type="button" data-stage="3" aria-pressed="false">
+              <strong>04</strong>
+              <span>Skyline Steps<small>132 BPM · AIR</small></span>
+            </button>
+          </div>
           <button id="startButton" class="primary-button" type="button">시작</button>
         </div>
       </section>
