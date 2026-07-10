@@ -745,8 +745,13 @@ function handlePress(event) {
 
   inputHeld = true;
 
-  if (state !== "playing") {
+  if (state === "menu") {
     startGame();
+    return;
+  }
+
+  if (state === "dead" || state === "complete") {
+    handleResultAction();
     return;
   }
 
