@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="지뢰찾기와 Dash Runner를 브라우저에서 바로 즐기는 작은 게임 모음"
+    />
+    <title>Simple Games</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Simple Games 홈">SG</a>
+      <p>브라우저에서 바로 플레이</p>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Pick a game</p>
+        <h1 id="page-title">Simple Games</h1>
+        <p class="intro-copy">설치 없이, 마음 가는 게임을 골라 바로 시작하세요.</p>
+      </section>
+
+      <section class="game-grid" aria-label="게임 목록">
+        <article class="game-card minesweeper-card">
+          <a class="preview-link" href="./minesweeper/" aria-label="지뢰찾기 플레이">
+            <img
+              src="./assets/minesweeper-preview.png"
+              alt="지뢰찾기 게임 화면"
+              width="1200"
+              height="750"
+            />
+          </a>
+          <div class="game-info">
+            <div>
+              <p class="genre">퍼즐 · 클래식</p>
+              <h2>지뢰찾기</h2>
+              <p>숫자를 읽고 숨은 지뢰를 피해 모든 안전 칸을 여세요.</p>
+            </div>
+            <a class="play-link" href="./minesweeper/">플레이 <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+
+        <article class="game-card dash-card">
+          <a class="preview-link" href="./geometry-dash-lite/" aria-label="Dash Runner 플레이">
+            <img
+              src="./assets/dash-preview.png"
+              alt="Dash Runner 게임 화면"
+              width="1200"
+              height="750"
+            />
+          </a>
+          <div class="game-info">
+            <div>
+              <p class="genre">액션 · 리듬</p>
+              <h2>Dash Runner</h2>
+              <p>한 번의 점프로 장애물을 넘고 끝까지 리듬을 이어가세요.</p>
+            </div>
+            <a class="play-link" href="./geometry-dash-lite/">플레이 <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <p>Simple Games · 두 게임, 한 번의 클릭</p>
+    </footer>
+  </body>
+</html>
