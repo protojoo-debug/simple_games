@@ -61,6 +61,7 @@ let beatPulse = 0;
 let beatIndex = 0;
 let audio = null;
 let nextBeatAt = 0;
+let inputHeld = false;
 
 bestEl.textContent = best;
 
@@ -135,11 +136,6 @@ function updateBest() {
 }
 
 function jump() {
-  if (state !== "playing") {
-    startGame();
-    return;
-  }
-
   if (!player.grounded) return;
   player.velocityY = -790;
   player.grounded = false;
@@ -234,6 +230,10 @@ function update(delta) {
     player.y = view.ground - player.size;
     player.velocityY = 0;
     player.grounded = true;
+  }
+
+  if (inputHeld && player.grounded) {
+    jump();
   }
 
   if (!player.grounded) {
@@ -526,17 +526,51 @@ function frame(time) {
   requestAnimationFrame(frame);
 }
 
+function isJumpKey(event) {
+  return ["Space", "ArrowUp", "KeyW"].includes(event.code);
+}
+
 function handlePress(event) {
   if (event.type === "keydown") {
-    if (!["Space", "ArrowUp", "KeyW"].includes(event.code) || event.repeat) return;
+    if (!isJumpKey(event) || event.repeat) return;
     event.preventDefault();
   }
+
+  if (event.type === "pointerdown") {
+    event.preventDefault();
+    canvas.setPointerCapture?.(event.pointerId);
+  }
+
+  inputHeld = true;
+
+  if (state !== "playing") {
+    startGame();
+    return;
+  }
+
   jump();
+}
+
+function handleRelease(event) {
+  if (event.type === "keyup" && !isJumpKey(event)) return;
+
+  if (event.type === "pointerup" || event.type === "pointercancel") {
+    event.preventDefault();
+    canvas.releasePointerCapture?.(event.pointerId);
+  }
+
+  inputHeld = false;
 }
 
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", handlePress);
+window.addEventListener("keyup", handleRelease);
+window.addEventListener("blur", () => {
+  inputHeld = false;
+});
 canvas.addEventListener("pointerdown", handlePress);
+canvas.addEventListener("pointerup", handleRelease);
+canvas.addEventListener("pointercancel", handleRelease);
 startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", startGame);
 
