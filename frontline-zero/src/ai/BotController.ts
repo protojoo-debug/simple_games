@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import type { Damageable, Difficulty, Team } from '../types/game';
 import type { PlayerController } from '../player/PlayerController';
 import type { EffectsManager } from '../rendering/EffectsManager';
+import {
+  resolvePlanarMovement,
+  type Bounds2D,
+  type ResolvedMovement,
+} from '../utils/collision';
 
 export type BotState = 'Patrol' | 'Investigate' | 'Chase' | 'Attack' | 'SeekCover' | 'Retreat' | 'Dead' | 'Respawn';
 
@@ -34,6 +39,7 @@ export class BotController implements Damageable {
     scene: THREE.Scene,
     private readonly player: PlayerController,
     private readonly solids: THREE.Object3D[],
+    private readonly navigationBounds: readonly Bounds2D[],
     private readonly effects: EffectsManager,
     private readonly difficulty: Difficulty,
     private readonly onPlayerDamage: (amount: number, source: THREE.Vector3) => void,
@@ -168,11 +174,14 @@ export class BotController implements Damageable {
       if (away.lengthSq() < 3) separation.add(away.normalize().multiplyScalar(0.75));
     }
     direction.add(separation).normalize();
-    const next = this.position.clone().addScaledVector(direction, speed * delta);
-    next.x = THREE.MathUtils.clamp(next.x, -30, 30);
-    next.z = THREE.MathUtils.clamp(next.z, -30, 30);
-    this.position.copy(next);
-    this.group.lookAt(next.clone().add(direction));
+    const distance = speed * delta;
+    let movement = this.resolveMovement(direction.x * distance, direction.z * distance);
+    if (movement.blockedX && movement.blockedZ) {
+      const turn = this.id % 2 === 0 ? 1 : -1;
+      movement = this.resolveMovement(-direction.z * distance * turn, direction.x * distance * turn);
+    }
+    this.position.set(movement.x, this.position.y, movement.z);
+    this.group.lookAt(this.position.clone().add(direction));
   }
 
   private strafe(delta: number, others: BotController[]): void {
@@ -184,6 +193,19 @@ export class BotController implements Damageable {
   private pickPatrolTarget(): void {
     const angle = this.id * 2.1 + Math.random();
     this.patrolTarget.set(Math.cos(angle) * (10 + this.id * 4), 0, Math.sin(angle) * (10 + this.id * 4));
+  }
+
+  private resolveMovement(deltaX: number, deltaZ: number): ResolvedMovement {
+    const clampedX = THREE.MathUtils.clamp(this.position.x + deltaX, -30, 30);
+    const clampedZ = THREE.MathUtils.clamp(this.position.z + deltaZ, -30, 30);
+    return resolvePlanarMovement(
+      this.position.x,
+      this.position.z,
+      clampedX - this.position.x,
+      clampedZ - this.position.z,
+      this.navigationBounds,
+      0.52,
+    );
   }
 
   private respawn(): void {

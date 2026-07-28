@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { Bounds2D } from '../utils/collision';
 
 export class Arena {
   readonly solids: THREE.Object3D[] = [];
+  readonly navigationBounds: Bounds2D[] = [];
   readonly captureCenter = new THREE.Vector3(0, 0, 0);
   readonly captureRing: THREE.Mesh;
 
@@ -55,6 +57,7 @@ export class Arena {
     core.castShadow = true;
     scene.add(core);
     this.solids.push(core);
+    this.navigationBounds.push({ minX: -1.8, maxX: 1.8, minZ: -1.8, maxZ: 1.8 });
 
     const coverData: Array<[number, number, number, number, number]> = [
       [-15, -12, 6, 2.5, 2],
@@ -120,6 +123,12 @@ export class Arena {
     mesh.userData.solid = true;
     this.scene.add(mesh);
     this.solids.push(mesh);
+    this.navigationBounds.push({
+      minX: position.x - size.x / 2,
+      maxX: position.x + size.x / 2,
+      minZ: position.z - size.z / 2,
+      maxZ: position.z + size.z / 2,
+    });
     physics.addBox(position, size);
   }
 }

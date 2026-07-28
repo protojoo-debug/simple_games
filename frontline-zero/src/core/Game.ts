@@ -64,6 +64,7 @@ export class Game {
         this.renderer.scene,
         this.player,
         this.arena.solids,
+        this.arena.navigationBounds,
         this.effects,
         this.settings.value.difficulty,
         (amount, source) => this.player.takeDamage(amount, source),
