@@ -179,6 +179,14 @@ h1 {
   border-top-color: var(--coral);
 }
 
+.frontline-card {
+  grid-column: 1 / -1;
+}
+
+.frontline-card .game-info {
+  border-top-color: #20b8cf;
+}
+
 .genre {
   margin-bottom: 9px;
   color: var(--green);
@@ -186,6 +194,100 @@ h1 {
 
 .dash-card .genre {
   color: var(--coral);
+}
+
+.frontline-card .genre {
+  color: #14889a;
+}
+
+.frontline-preview {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 58%, rgba(76, 228, 244, 0.3), transparent 22%),
+    linear-gradient(180deg, #102c37 0%, #07151c 76%);
+}
+
+.frontline-preview > span,
+.frontline-preview > strong {
+  position: absolute;
+  display: block;
+}
+
+.preview-grid {
+  z-index: -1;
+  inset: 42% -10% -44%;
+  transform: perspective(380px) rotateX(58deg);
+  background-image:
+    linear-gradient(rgba(71, 202, 220, 0.26) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(71, 202, 220, 0.26) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.preview-node {
+  left: 50%;
+  bottom: 19%;
+  width: 74px;
+  height: 112px;
+  transform: translateX(-50%);
+  clip-path: polygon(24% 0, 76% 0, 100% 80%, 78% 100%, 22% 100%, 0 80%);
+  background: linear-gradient(90deg, #153d49, #4ce4f4 50%, #153d49);
+  box-shadow: 0 0 42px rgba(76, 228, 244, 0.75);
+}
+
+.preview-cover {
+  bottom: 13%;
+  width: 23%;
+  height: 31%;
+  background: linear-gradient(135deg, #31505a, #132831);
+  border-top: 3px solid rgba(126, 215, 227, 0.48);
+}
+
+.cover-left {
+  left: 9%;
+  clip-path: polygon(0 23%, 90% 0, 100% 100%, 8% 100%);
+}
+
+.cover-right {
+  right: 9%;
+  clip-path: polygon(10% 0, 100% 23%, 92% 100%, 0 100%);
+}
+
+.preview-reticle {
+  left: 50%;
+  top: 46%;
+  width: 46px;
+  height: 46px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(234, 255, 255, 0.86);
+  border-radius: 50%;
+}
+
+.preview-reticle::before,
+.preview-reticle::after {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  background: #efffff;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.preview-reticle::before {
+  width: 66px;
+  height: 2px;
+}
+
+.preview-reticle::after {
+  width: 2px;
+  height: 66px;
+}
+
+.frontline-preview strong {
+  left: 24px;
+  top: 22px;
+  color: #8debf6;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
 }
 
 h2 {
@@ -245,6 +347,10 @@ footer {
 
   .game-grid {
     grid-template-columns: 1fr;
+  }
+
+  .frontline-card {
+    grid-column: auto;
   }
 }
 
