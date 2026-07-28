@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.openai/
+public/server/
+web/server/
+*.log
+*.tsbuildinfo
