@@ -23,15 +23,16 @@ export class InputManager {
 
   private readonly keys = new Set<string>();
 
-  public update(currentX: number): number {
+  public update(): number {
     const keyboard =
       (this.keys.has("ArrowRight") || this.keys.has("KeyD") ? 1 : 0) -
       (this.keys.has("ArrowLeft") || this.keys.has("KeyA") ? 1 : 0);
     this.horizontal = keyboard;
-    if (keyboard !== 0) return keyboard;
-    if (!this.dragging && !this.mouseTracking) return 0;
-    const delta = this.pointerTarget - currentX;
-    return clamp(delta * 1.8, -1, 1);
+    return keyboard;
+  }
+
+  public getPointerTarget(): number | null {
+    return this.dragging || this.mouseTracking ? this.pointerTarget : null;
   }
 
   public consumeSpecial(): boolean {

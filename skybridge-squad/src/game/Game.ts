@@ -12,7 +12,7 @@ import { Pool } from "../systems/Pool";
 import { SpawnSystem } from "../systems/SpawnSystem";
 import { StageSystem } from "../systems/StageSystem";
 import type { GameState, GameStats } from "../types";
-import { clamp, randomRange } from "../utils/math";
+import { randomRange } from "../utils/math";
 import { AudioManager } from "./AudioManager";
 import { CollisionManager } from "./CollisionManager";
 import {
@@ -182,13 +182,15 @@ export class Game {
   private updatePlaying(dt: number): void {
     this.stats.elapsed += dt;
     this.specialTimer = Math.min(SPECIAL_COOLDOWN, this.specialTimer + dt);
-    const horizontal = this.input.update(this.player.group.position.x);
-    const desiredX = clamp(
-      this.player.group.position.x + horizontal * LATERAL_SPEED * dt,
-      -GAME_WIDTH / 2 + 0.35,
-      GAME_WIDTH / 2 - 0.35,
-    );
-    this.player.setHorizontalTarget(desiredX);
+    const horizontal = this.input.update();
+    const pointerTarget = this.input.getPointerTarget();
+    if (horizontal !== 0) {
+      this.player.setHorizontalTarget(
+        this.player.group.position.x + horizontal * LATERAL_SPEED * dt,
+      );
+    } else if (pointerTarget !== null) {
+      this.player.snapHorizontal(pointerTarget);
+    }
     this.player.update(dt);
     const bossHolding = this.boss?.active && this.boss.group.position.z <= 18;
     const worldSpeed = bossHolding ? 0 : RUN_SPEED;
