@@ -4,6 +4,7 @@ export class InputManager {
   public horizontal = 0;
   private pointerTarget = 0;
   private dragging = false;
+  private mouseTracking = false;
   private specialQueued = false;
   private pointerMoved = false;
 
@@ -28,7 +29,7 @@ export class InputManager {
       (this.keys.has("ArrowLeft") || this.keys.has("KeyA") ? 1 : 0);
     this.horizontal = keyboard;
     if (keyboard !== 0) return keyboard;
-    if (!this.dragging) return 0;
+    if (!this.dragging && !this.mouseTracking) return 0;
     const delta = this.pointerTarget - currentX;
     return clamp(delta * 1.8, -1, 1);
   }
@@ -64,22 +65,26 @@ export class InputManager {
   private readonly pointerToWorld = (clientX: number): number => {
     const rect = this.element.getBoundingClientRect();
     const normalized = ((clientX - rect.left) / rect.width) * 2 - 1;
-    return clamp(normalized * this.halfWidth, -this.halfWidth, this.halfWidth);
+    // 카메라가 +Z 방향을 바라보므로 화면의 오른쪽은 월드의 -X 방향이다.
+    return clamp(-normalized * this.halfWidth, -this.halfWidth, this.halfWidth);
   };
 
   private readonly onPointerDown = (event: PointerEvent): void => {
     this.dragging = true;
+    this.mouseTracking = event.pointerType === "mouse";
     this.pointerMoved = false;
     this.pointerTarget = this.pointerToWorld(event.clientX);
     this.element.setPointerCapture(event.pointerId);
   };
 
   private readonly onPointerMove = (event: PointerEvent): void => {
-    if (!this.dragging) return;
-    if (Math.abs(this.pointerTarget - this.pointerToWorld(event.clientX)) > 0.08) {
+    if (event.pointerType === "mouse") this.mouseTracking = true;
+    if (!this.dragging && !this.mouseTracking) return;
+    const nextTarget = this.pointerToWorld(event.clientX);
+    if (this.dragging && Math.abs(this.pointerTarget - nextTarget) > 0.08) {
       this.pointerMoved = true;
     }
-    this.pointerTarget = this.pointerToWorld(event.clientX);
+    this.pointerTarget = nextTarget;
   };
 
   private readonly onPointerUp = (event: PointerEvent): void => {
