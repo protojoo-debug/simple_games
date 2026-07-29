@@ -47,7 +47,7 @@ app.innerHTML = `
           </div>
         </div>
         <div id="help-panel" class="help-panel">
-          <p><b>PC</b> A/D·방향키 또는 마우스 드래그로 이동 · Space/클릭으로 펄스</p>
+          <p><b>PC</b> A/D·방향키 또는 마우스 커서 위치로 이동 · Space/클릭으로 펄스</p>
           <p><b>모바일</b> 좌우 드래그로 이동 · 탭으로 펄스 · 기본 사격은 자동</p>
         </div>
         <p class="menu-footnote">+ · − · × · ÷ 기호를 확인하고 더 유리한 경로를 선택하세요.</p>
