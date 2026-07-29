@@ -1,0 +1,17 @@
+export const GAME_WIDTH = 7.4;
+export const PLAYER_Z = 0;
+export const RUN_SPEED = 7;
+export const LATERAL_SPEED = 10;
+export const STARTING_ARMY = 15;
+export const STARTING_FIRE_INTERVAL = 0.18;
+export const STARTING_DAMAGE = 1;
+export const MAX_VISIBLE_ALLIES = 30;
+export const STAGE_LENGTH = 610;
+export const BOSS_DISTANCE = 535;
+export const PROJECTILE_SPEED = 42;
+export const PROJECTILE_LIFETIME = 1.8;
+export const SPECIAL_COOLDOWN = 5;
+export const CAMERA_FOV = 47;
+export const MAX_PIXEL_RATIO = 1.75;
+export const LOW_POWER_PIXEL_RATIO = 1.15;
+export const BEST_SCORE_KEY = "skybridge-squad-best-score";

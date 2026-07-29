@@ -132,6 +132,119 @@ h1 {
   box-shadow: var(--shadow);
 }
 
+.skybridge-card {
+  grid-column: 1 / -1;
+}
+
+.skybridge-card .game-info {
+  border-top-color: #35c6e8;
+}
+
+.skybridge-card .genre {
+  color: #168da8;
+}
+
+.skybridge-preview {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 26%, rgba(137, 224, 245, 0.32), transparent 24%),
+    linear-gradient(180deg, #315d70 0%, #132b3c 62%, #091723 100%);
+}
+
+.skybridge-preview > span,
+.skybridge-preview > strong {
+  position: absolute;
+  display: block;
+}
+
+.skybridge-preview > strong {
+  z-index: 4;
+  top: 10%;
+  left: 6%;
+  color: #e9fbff;
+  font-size: clamp(1.4rem, 5vw, 4.2rem);
+  line-height: 0.88;
+  letter-spacing: -0.06em;
+  text-shadow: 0 5px 24px rgba(0, 0, 0, 0.38);
+}
+
+.sky-road {
+  z-index: 1;
+  left: 26%;
+  bottom: -22%;
+  width: 48%;
+  height: 92%;
+  clip-path: polygon(43% 0, 57% 0, 100% 100%, 0 100%);
+  background:
+    linear-gradient(90deg, #55cce8 0 2%, transparent 2% 98%, #55cce8 98%),
+    #506d78;
+}
+
+.sky-mountain {
+  bottom: 0;
+  width: 48%;
+  height: 58%;
+  clip-path: polygon(0 100%, 44% 22%, 56% 44%, 72% 6%, 100% 100%);
+  background: linear-gradient(140deg, #9fc3ce 0 14%, #294857 15% 100%);
+  opacity: 0.8;
+}
+
+.mountain-left {
+  left: -8%;
+}
+
+.mountain-right {
+  right: -8%;
+  transform: scaleX(-1);
+}
+
+.sky-unit {
+  z-index: 3;
+  bottom: 10%;
+  width: 3.5%;
+  aspect-ratio: 0.52;
+  border-radius: 999px 999px 45% 45%;
+  background: #64dcff;
+  box-shadow: 0 -8px 0 -2px #dffaff;
+}
+
+.unit-one {
+  left: 48.2%;
+}
+
+.unit-two {
+  left: 43%;
+  bottom: 6%;
+}
+
+.unit-three {
+  right: 43%;
+  bottom: 6%;
+}
+
+.sky-gate {
+  z-index: 2;
+  bottom: 45%;
+  display: grid !important;
+  width: 11%;
+  aspect-ratio: 0.9;
+  place-items: center;
+  border: 3px solid currentColor;
+  color: #63f3cf;
+  background: rgba(20, 90, 84, 0.55);
+  font-weight: 900;
+}
+
+.gate-left {
+  left: 38%;
+}
+
+.gate-right {
+  right: 38%;
+  color: #66c5ff;
+  background: rgba(27, 76, 120, 0.55);
+}
+
 .preview-link {
   position: relative;
   display: block;

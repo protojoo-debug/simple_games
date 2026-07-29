@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="지뢰찾기, Dash Runner, FRONTLINE: ZERO를 브라우저에서 바로 즐기는 작은 게임 모음"
+      content="지뢰찾기, Dash Runner, FRONTLINE: ZERO, 스카이브리지 스쿼드를 브라우저에서 바로 즐기는 작은 게임 모음"
     />
     <title>Simple Games</title>
     <link rel="stylesheet" href="./styles.css" />
@@ -24,14 +24,35 @@
       </section>
 
       <section class="game-grid" aria-label="게임 목록">
+        <article class="game-card skybridge-card">
+          <a
+            class="preview-link skybridge-preview"
+            href="./skybridge-squad/web/"
+            aria-label="스카이브리지 스쿼드 플레이"
+          >
+            <span class="sky-mountain mountain-left" aria-hidden="true"></span>
+            <span class="sky-mountain mountain-right" aria-hidden="true"></span>
+            <span class="sky-road" aria-hidden="true"></span>
+            <span class="sky-unit unit-one" aria-hidden="true"></span>
+            <span class="sky-unit unit-two" aria-hidden="true"></span>
+            <span class="sky-unit unit-three" aria-hidden="true"></span>
+            <span class="sky-gate gate-left" aria-hidden="true">+10</span>
+            <span class="sky-gate gate-right" aria-hidden="true">×2</span>
+            <strong>SKYBRIDGE<br />SQUAD</strong>
+          </a>
+          <div class="game-info">
+            <div>
+              <p class="genre">3D 러너 · 슈팅</p>
+              <h2>스카이브리지 스쿼드</h2>
+              <p>숫자를 읽고 유리한 경로를 선택해 공중 교량의 거대 보스를 무너뜨리세요.</p>
+            </div>
+            <a class="play-link" href="./skybridge-squad/web/">플레이 <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+
         <article class="game-card minesweeper-card">
           <a class="preview-link" href="./minesweeper/" aria-label="지뢰찾기 플레이">
-            <img
-              src="./assets/minesweeper-preview.png"
-              alt="지뢰찾기 게임 화면"
-              width="1200"
-              height="750"
-            />
+            <img src="./assets/minesweeper-preview.png" alt="지뢰찾기 게임 화면" width="1200" height="750" />
           </a>
           <div class="game-info">
             <div>
@@ -45,12 +66,7 @@
 
         <article class="game-card dash-card">
           <a class="preview-link" href="./geometry-dash-lite/" aria-label="Dash Runner 플레이">
-            <img
-              src="./assets/dash-preview.png"
-              alt="Dash Runner 게임 화면"
-              width="1200"
-              height="750"
-            />
+            <img src="./assets/dash-preview.png" alt="Dash Runner 게임 화면" width="1200" height="750" />
           </a>
           <div class="game-info">
             <div>
@@ -63,11 +79,7 @@
         </article>
 
         <article class="game-card frontline-card">
-          <a
-            class="preview-link frontline-preview"
-            href="./frontline-zero/web/"
-            aria-label="FRONTLINE: ZERO 플레이"
-          >
+          <a class="preview-link frontline-preview" href="./frontline-zero/web/" aria-label="FRONTLINE: ZERO 플레이">
             <span class="preview-grid" aria-hidden="true"></span>
             <span class="preview-node" aria-hidden="true"></span>
             <span class="preview-cover cover-left" aria-hidden="true"></span>
@@ -79,18 +91,16 @@
             <div>
               <p class="genre">3D 액션 · 점령전</p>
               <h2>FRONTLINE: ZERO</h2>
-              <p>VANGUARD-7이 되어 에너지 노드를 점령하고 세 기의 적 전투 유닛을 저지하세요.</p>
+              <p>VANGUARD-7이 되어 에너지 노드를 점령하고 적 기지의 전투 신호를 차단하세요.</p>
             </div>
-            <a class="play-link" href="./frontline-zero/web/"
-              >플레이 <span aria-hidden="true">→</span></a
-            >
+            <a class="play-link" href="./frontline-zero/web/">플레이 <span aria-hidden="true">→</span></a>
           </div>
         </article>
       </section>
     </main>
 
     <footer>
-      <p>Simple Games · 세 게임, 한 번의 클릭</p>
+      <p>Simple Games · 네 게임, 한 번의 클릭</p>
     </footer>
   </body>
 </html>

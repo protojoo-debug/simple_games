@@ -1,0 +1,65 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: skybridge-squad
+        run: npm install
+
+      - name: Build Skybridge Squad
+        working-directory: skybridge-squad
+        run: npm run build
+
+      - name: Prepare Pages artifact
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp -R index.html styles.css assets minesweeper geometry-dash-lite frontline-zero/web _site/
+          mkdir -p _site/frontline-zero
+          mv _site/web _site/frontline-zero/web
+          mkdir -p _site/skybridge-squad
+          cp -R skybridge-squad/web _site/skybridge-squad/
+          touch _site/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -13,6 +13,8 @@ const resultScore = document.querySelector("#resultScore");
 const startButton = document.querySelector("#startButton");
 const restartButton = document.querySelector("#restartButton");
 const stageButtons = [...document.querySelectorAll(".stage-button")];
+const spriteCache = new Map();
+const SPRITE_SCALE = 2;
 
 const player = {
   x: 170,
@@ -25,10 +27,96 @@ const player = {
 };
 
 const BEAT_DISTANCE = 180;
+const JUMP_SPEED = 790;
+const GRAVITY = 2350;
+const ONE_HOLD_BPM = 134;
+const INITIAL_HOLD_WINDOW_SECONDS = 0.3;
 
 function atBeat(beat, type, options = {}) {
   return { x: beat * BEAT_DISTANCE, type, ...options };
 }
+
+function buildOneHoldCourse() {
+  const speed = BEAT_DISTANCE * (ONE_HOLD_BPM / 60);
+  const playerCollisionWidth = player.size - 8;
+  const platformWidth =
+    speed * INITIAL_HOLD_WINDOW_SECONDS - playerCollisionWidth;
+  const platformHeight = 40;
+  const platformTops = [72, 96, 120];
+  const heightPattern = [
+    0, 1, 2, 1, 0, 2, 1, 0, 1, 2,
+    0, 2, 1, 2, 0, 1, 0, 2, 1, 2,
+    0, 1, 2, 0, 2, 1, 0, 1, 2, 1,
+  ];
+  const firstPlatformCenter = 6 * BEAT_DISTANCE + platformWidth / 2;
+  const physicsStep = 1 / 60;
+
+  function getLandingTime(targetHeight) {
+    let y = 0;
+    let velocity = -JUMP_SPEED;
+    let elapsed = 0;
+
+    while (elapsed < 2) {
+      velocity += GRAVITY * physicsStep;
+      y += velocity * physicsStep;
+      elapsed += physicsStep;
+      if (velocity >= 0 && y >= -targetHeight) return elapsed;
+    }
+
+    return 0;
+  }
+
+  const firstTop = platformTops[heightPattern[0]];
+  const playerCollisionCenter = 4 + playerCollisionWidth / 2;
+  const holdStartDistance =
+    firstPlatformCenter -
+    playerCollisionCenter -
+    speed * getLandingTime(firstTop);
+  const obstacles = [];
+  let platformCenter = firstPlatformCenter;
+
+  for (let index = 0; index < heightPattern.length; index += 1) {
+    const currentTop = platformTops[heightPattern[index]];
+    const platformX = platformCenter - platformWidth / 2;
+    obstacles.push({
+      x: platformX,
+      type: "block",
+      width: platformWidth,
+      height: platformHeight,
+      elevation: currentTop - platformHeight,
+    });
+    obstacles.push({ x: platformCenter - 21, type: "spike" });
+
+    if (index === heightPattern.length - 1) continue;
+
+    const nextTop = platformTops[heightPattern[index + 1]];
+    const nextCenter = platformCenter + speed * getLandingTime(nextTop - currentTop);
+    const midpoint = (platformCenter + nextCenter) / 2;
+
+    if (index % 3 === 0) {
+      obstacles.push({ x: midpoint - 63, type: "spike" });
+      obstacles.push({ x: midpoint - 21, type: "spike" });
+      obstacles.push({ x: midpoint + 21, type: "spike" });
+    } else if (index % 3 === 1) {
+      obstacles.push({ x: midpoint - 86, type: "block", width: 62, height: 58, elevation: 0 });
+      obstacles.push({ x: midpoint + 24, type: "block", width: 62, height: 58, elevation: 0 });
+      obstacles.push({ x: midpoint - 21, type: "spike" });
+    } else {
+      obstacles.push({ x: midpoint - 38, type: "block", width: 76, height: 38, elevation: 62 });
+      obstacles.push({ x: midpoint - 68, type: "spike" });
+      obstacles.push({ x: midpoint + 26, type: "spike" });
+    }
+
+    platformCenter = nextCenter;
+  }
+
+  return {
+    holdStartDistance,
+    obstacles: obstacles.sort((a, b) => a.x - b.x),
+  };
+}
+
+const oneHoldCourse = buildOneHoldCourse();
 
 const stages = [
   {
@@ -157,6 +245,22 @@ const stages = [
       atBeat(44, "block", { width: 170, height: 42, elevation: 56 }),
     ],
   },
+  {
+    id: "one-hold-core",
+    number: 5,
+    name: "One Hold Core",
+    bpm: ONE_HOLD_BPM,
+    beats: 56,
+    audioRoot: 277.18,
+    theme: {
+      skyA: "#190d25", skyB: "#17343d", skyC: "#411620",
+      mountainA: "#432344", mountainB: "#182c35",
+      hot: "#ff416c", gold: "#ffe66d", mint: "#42f5c5", accent: "#00a8e8",
+    },
+    holdStartDistance: oneHoldCourse.holdStartDistance,
+    holdWindowSeconds: INITIAL_HOLD_WINDOW_SECONDS,
+    obstacles: oneHoldCourse.obstacles,
+  },
 ];
 
 let view = { width: 1280, height: 720, ground: 530, dpr: 1 };
@@ -177,6 +281,10 @@ let nextBeatAt = 0;
 let stageStartedAt = null;
 let inputHeld = false;
 let resultAction = "restart";
+let collisionStartIndex = 0;
+let displayedScore = 0;
+let displayedProgress = 0;
+let stageInputStarted = false;
 
 bestEl.textContent = best;
 stageNameEl.textContent = getStageLabel(currentStage);
@@ -205,7 +313,8 @@ function resize() {
   view.width = rect.width;
   view.height = rect.height;
   view.ground = Math.round(rect.height * 0.76);
-  view.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dprLimit = rect.width <= 900 ? 1.25 : 1.5;
+  view.dpr = Math.min(window.devicePixelRatio || 1, dprLimit);
 
   canvas.width = Math.floor(rect.width * view.dpr);
   canvas.height = Math.floor(rect.height * view.dpr);
@@ -229,8 +338,12 @@ function resetGame() {
   player.velocityY = 0;
   player.rotation = 0;
   player.grounded = true;
+  collisionStartIndex = 0;
+  displayedScore = 0;
+  displayedProgress = 0;
+  stageInputStarted = false;
   scoreEl.textContent = "0";
-  progressFill.style.width = "0%";
+  progressFill.style.transform = "scaleX(0)";
 }
 
 function startGame() {
@@ -239,6 +352,7 @@ function startGame() {
   stageStartedAt = performance.now() / 1000 + 0.08;
   menu.classList.remove("visible");
   result.classList.remove("visible");
+  if (currentStage.holdStartDistance !== undefined) inputHeld = false;
   startAudio();
 }
 
@@ -294,7 +408,7 @@ function updateBest() {
 
 function jump() {
   if (!player.grounded) return;
-  player.velocityY = -790;
+  player.velocityY = -JUMP_SPEED;
   player.grounded = false;
   burst(player.x + player.size * 0.5, view.ground - 6, 8, "#2de2bf");
   playBlip(520, 0.045, "triangle", 0.055);
@@ -385,12 +499,19 @@ function update(delta) {
   }
   const progress = Math.min(distance / stageLength, 1);
   score = Math.floor(distance / 12);
-  scoreEl.textContent = score;
-  progressFill.style.width = `${Math.floor(progress * 100)}%`;
+  const progressPercent = Math.floor(progress * 100);
+  if (score !== displayedScore) {
+    displayedScore = score;
+    scoreEl.textContent = score;
+  }
+  if (progressPercent !== displayedProgress) {
+    displayedProgress = progressPercent;
+    progressFill.style.transform = `scaleX(${progressPercent / 100})`;
+  }
 
   player.previousY = player.y;
   player.grounded = false;
-  player.velocityY += 2350 * delta;
+  player.velocityY += GRAVITY * delta;
   player.y += player.velocityY * delta;
 
   if (player.y >= view.ground - player.size) {
@@ -415,7 +536,8 @@ function update(delta) {
   beatPulse = Math.max(0, beatPulse - delta * 2.6);
 
   if (distance >= stageLength) {
-    progressFill.style.width = "100%";
+    displayedProgress = 100;
+    progressFill.style.transform = "scaleX(1)";
     finishGame();
   }
 }
@@ -453,7 +575,17 @@ function checkCollisions() {
     height: player.size - 8,
   };
 
-  for (const obstacle of currentStage.obstacles) {
+  const obstacles = currentStage.obstacles;
+  while (collisionStartIndex < obstacles.length) {
+    const obstacle = obstacles[collisionStartIndex];
+    const width = obstacle.width ?? 42;
+    if (obstacle.x + width >= distance - 64) break;
+    collisionStartIndex += 1;
+  }
+
+  for (let index = collisionStartIndex; index < obstacles.length; index += 1) {
+    const obstacle = obstacles[index];
+    if (obstacle.x > distance + player.size + 96) break;
     const width = obstacle.width ?? 42;
     const height = obstacle.height ?? 42;
     const elevation = obstacle.elevation ?? 0;
@@ -610,7 +742,13 @@ function drawTrack() {
 }
 
 function drawObstacles() {
-  for (const obstacle of currentStage.obstacles) {
+  const obstacles = currentStage.obstacles;
+  const firstVisibleIndex = Math.max(0, collisionStartIndex - 1);
+  const maxWorldX = distance + (view.width - player.x) + 180;
+
+  for (let index = firstVisibleIndex; index < obstacles.length; index += 1) {
+    const obstacle = obstacles[index];
+    if (obstacle.x > maxWorldX) break;
     const x = obstacle.x - distance + player.x;
     if (x < -180 || x > view.width + 180) continue;
 
@@ -623,51 +761,115 @@ function drawObstacles() {
   }
 }
 
+function createSprite(width, height, drawSprite) {
+  const spriteCanvas = document.createElement("canvas");
+  spriteCanvas.width = Math.ceil(width * SPRITE_SCALE);
+  spriteCanvas.height = Math.ceil(height * SPRITE_SCALE);
+  const spriteContext = spriteCanvas.getContext("2d");
+  spriteContext.scale(SPRITE_SCALE, SPRITE_SCALE);
+  drawSprite(spriteContext);
+  return { canvas: spriteCanvas, width, height };
+}
+
+function getSpikeSprite() {
+  const key = `spike:${currentStage.id}`;
+  if (spriteCache.has(key)) return spriteCache.get(key);
+
+  const padding = 16;
+  const sprite = createSprite(74, 75, (spriteContext) => {
+    const theme = currentStage.theme;
+    const x = padding;
+    const groundY = padding + 43;
+    spriteContext.shadowColor = theme.hot;
+    spriteContext.shadowBlur = 16;
+    const gradient = spriteContext.createLinearGradient(x, groundY - 42, x, groundY);
+    gradient.addColorStop(0, "#f9f4df");
+    gradient.addColorStop(0.44, theme.gold);
+    gradient.addColorStop(1, theme.hot);
+    spriteContext.fillStyle = gradient;
+    spriteContext.beginPath();
+    spriteContext.moveTo(x, groundY);
+    spriteContext.lineTo(x + 21, groundY - 43);
+    spriteContext.lineTo(x + 42, groundY);
+    spriteContext.closePath();
+    spriteContext.fill();
+    spriteContext.strokeStyle = "rgba(23, 16, 24, 0.85)";
+    spriteContext.lineWidth = 3;
+    spriteContext.stroke();
+  });
+  spriteCache.set(key, sprite);
+  return sprite;
+}
+
+function getBlockSprite(width, height, floating) {
+  const key = `block:${currentStage.id}:${width}:${height}:${floating ? 1 : 0}`;
+  if (spriteCache.has(key)) return spriteCache.get(key);
+
+  const padding = 16;
+  const sprite = createSprite(width + padding * 2, height + padding * 2, (spriteContext) => {
+    const theme = currentStage.theme;
+    const x = padding;
+    const y = padding;
+    spriteContext.shadowColor = theme.mint;
+    spriteContext.shadowBlur = 16;
+    const gradient = spriteContext.createLinearGradient(x, y, x + width, y + height);
+    gradient.addColorStop(0, theme.mint);
+    gradient.addColorStop(0.52, theme.accent);
+    gradient.addColorStop(1, theme.hot);
+    spriteContext.fillStyle = gradient;
+    spriteContext.fillRect(x, y, width, height);
+    spriteContext.fillStyle = "rgba(255, 255, 255, 0.18)";
+    spriteContext.fillRect(x + 6, y + 6, width - 12, 7);
+    spriteContext.strokeStyle = "rgba(13, 12, 20, 0.84)";
+    spriteContext.lineWidth = 4;
+    spriteContext.strokeRect(x, y, width, height);
+
+    if (floating) {
+      spriteContext.globalAlpha = 0.3;
+      spriteContext.fillStyle = theme.mint;
+      spriteContext.fillRect(x + 8, y + height + 8, width - 16, 3);
+    }
+  });
+  spriteCache.set(key, sprite);
+  return sprite;
+}
+
+function getPlayerSprite() {
+  const key = "player";
+  if (spriteCache.has(key)) return spriteCache.get(key);
+
+  const padding = 18;
+  const sprite = createSprite(player.size + padding * 2, player.size + padding * 2, (spriteContext) => {
+    const x = padding;
+    const y = padding;
+    const gradient = spriteContext.createLinearGradient(x, y, x + player.size, y + player.size);
+    gradient.addColorStop(0, "#ffd166");
+    gradient.addColorStop(0.54, "#ff4f6d");
+    gradient.addColorStop(1, "#7c5cff");
+    spriteContext.shadowColor = "rgba(255, 209, 102, 0.55)";
+    spriteContext.shadowBlur = 18;
+    spriteContext.fillStyle = gradient;
+    spriteContext.fillRect(x, y, player.size, player.size);
+    spriteContext.strokeStyle = "#171018";
+    spriteContext.lineWidth = 4;
+    spriteContext.strokeRect(x, y, player.size, player.size);
+    spriteContext.fillStyle = "#171018";
+    spriteContext.fillRect(x + 10, y + 13, 7, 7);
+    spriteContext.fillRect(x + 28, y + 13, 7, 7);
+    spriteContext.fillRect(x + 11, y + 30, 24, 5);
+  });
+  spriteCache.set(key, sprite);
+  return sprite;
+}
+
 function drawSpike(x, groundY) {
-  const theme = currentStage.theme;
-  ctx.save();
-  ctx.shadowColor = "rgba(255, 79, 109, 0.6)";
-  ctx.shadowBlur = 16;
-  const gradient = ctx.createLinearGradient(x, groundY - 42, x, groundY);
-  gradient.addColorStop(0, "#f9f4df");
-  gradient.addColorStop(0.44, theme.gold);
-  gradient.addColorStop(1, theme.hot);
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.moveTo(x, groundY);
-  ctx.lineTo(x + 21, groundY - 43);
-  ctx.lineTo(x + 42, groundY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = "rgba(23, 16, 24, 0.85)";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.restore();
+  const sprite = getSpikeSprite();
+  ctx.drawImage(sprite.canvas, x - 16, groundY - 59, sprite.width, sprite.height);
 }
 
 function drawBlock(x, y, width, height, elevation = 0) {
-  const theme = currentStage.theme;
-  ctx.save();
-  ctx.shadowColor = "rgba(45, 226, 191, 0.38)";
-  ctx.shadowBlur = 16;
-  const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
-  gradient.addColorStop(0, theme.mint);
-  gradient.addColorStop(0.52, theme.accent);
-  gradient.addColorStop(1, theme.hot);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(x, y, width, height);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
-  ctx.fillRect(x + 6, y + 6, width - 12, 7);
-  ctx.strokeStyle = "rgba(13, 12, 20, 0.84)";
-  ctx.lineWidth = 4;
-  ctx.strokeRect(x, y, width, height);
-
-  if (elevation > 0) {
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = theme.mint;
-    ctx.fillRect(x + 8, y + height + 8, width - 16, 3);
-  }
-  ctx.restore();
+  const sprite = getBlockSprite(width, height, elevation > 0);
+  ctx.drawImage(sprite.canvas, x - 16, y - 16, sprite.width, sprite.height);
 }
 
 function drawParticles() {
@@ -687,24 +889,8 @@ function drawPlayer() {
   ctx.save();
   ctx.translate(centerX, centerY);
   ctx.rotate(player.rotation);
-  ctx.shadowColor = "rgba(255, 209, 102, 0.55)";
-  ctx.shadowBlur = 18;
-
-  const gradient = ctx.createLinearGradient(-player.size / 2, -player.size / 2, player.size / 2, player.size / 2);
-  gradient.addColorStop(0, "#ffd166");
-  gradient.addColorStop(0.54, "#ff4f6d");
-  gradient.addColorStop(1, "#7c5cff");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
-
-  ctx.strokeStyle = "#171018";
-  ctx.lineWidth = 4;
-  ctx.strokeRect(-player.size / 2, -player.size / 2, player.size, player.size);
-
-  ctx.fillStyle = "#171018";
-  ctx.fillRect(-11, -8, 7, 7);
-  ctx.fillRect(7, -8, 7, 7);
-  ctx.fillRect(-10, 9, 24, 5);
+  const sprite = getPlayerSprite();
+  ctx.drawImage(sprite.canvas, -sprite.width / 2, -sprite.height / 2, sprite.width, sprite.height);
   ctx.restore();
 }
 
@@ -753,6 +939,16 @@ function handlePress(event) {
   if (state === "dead" || state === "complete") {
     handleResultAction();
     return;
+  }
+
+  if (currentStage.holdStartDistance !== undefined && !stageInputStarted) {
+    stageInputStarted = true;
+    const timingTolerance = speed * (currentStage.holdWindowSeconds / 2);
+    if (Math.abs(distance - currentStage.holdStartDistance) > timingTolerance) {
+      inputHeld = false;
+      crash();
+      return;
+    }
   }
 
   jump();

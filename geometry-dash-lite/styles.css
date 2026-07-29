@@ -112,10 +112,13 @@ canvas {
 
 .progress span {
   display: block;
-  width: 0%;
+  width: 100%;
   height: 100%;
   background: linear-gradient(90deg, var(--mint), var(--gold), var(--hot));
   box-shadow: 0 0 18px rgba(255, 209, 102, 0.5);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
 }
 
 .overlay {
@@ -200,6 +203,10 @@ canvas {
   background: rgba(45, 226, 191, 0.15);
   color: var(--ink);
   box-shadow: inset 0 -3px 0 var(--mint);
+}
+
+.stage-button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .stage-button:focus-visible {
