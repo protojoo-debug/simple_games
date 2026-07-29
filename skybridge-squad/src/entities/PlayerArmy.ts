@@ -25,6 +25,11 @@ export class PlayerArmy {
     this.targetX = clamp(x, -3.2, 3.2);
   }
 
+  public snapHorizontal(x: number): void {
+    this.targetX = clamp(x, -3.2, 3.2);
+    this.group.position.x = this.targetX;
+  }
+
   public update(dt: number): void {
     this.group.position.x = damp(this.group.position.x, this.targetX, 18, dt);
     const bounce = Math.sin(performance.now() * 0.011) * 0.035;
