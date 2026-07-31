@@ -27,6 +27,22 @@
           <button id="newGame" class="button primary" type="button">새 게임</button>
           <button id="flagMode" class="button" type="button" aria-pressed="false">깃발 모드</button>
           <button
+            id="lifeMode"
+            class="button"
+            type="button"
+            aria-pressed="false"
+          >
+            라이프
+          </button>
+          <button
+            id="autoOpen"
+            class="button"
+            type="button"
+            aria-pressed="false"
+          >
+            자동 개방
+          </button>
+          <button
             id="assistantToggle"
             class="button"
             type="button"
@@ -42,6 +58,10 @@
         <div class="status-card">
           <span>남은 지뢰</span>
           <strong id="mineCount">10</strong>
+        </div>
+        <div id="lifeStatus" class="status-card" hidden>
+          <span>라이프</span>
+          <strong id="lifeCount">3 / 3</strong>
         </div>
         <div class="status-card">
           <span>시간</span>

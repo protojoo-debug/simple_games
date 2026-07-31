@@ -2,7 +2,12 @@ const boardEl = document.querySelector("#board");
 const difficultyEl = document.querySelector("#difficulty");
 const newGameButton = document.querySelector("#newGame");
 const flagModeButton = document.querySelector("#flagMode");
+const lifeModeButton = document.querySelector("#lifeMode");
+const autoOpenButton = document.querySelector("#autoOpen");
+const statusGridEl = document.querySelector(".status-grid");
 const mineCountEl = document.querySelector("#mineCount");
+const lifeStatusEl = document.querySelector("#lifeStatus");
+const lifeCountEl = document.querySelector("#lifeCount");
 const timerEl = document.querySelector("#timer");
 const messageEl = document.querySelector("#message");
 const assistantToggleButton = document.querySelector("#assistantToggle");
@@ -23,9 +28,9 @@ const assistantVisualCaptionEl = document.querySelector(
 const assistantMiniMapsEl = document.querySelector("#assistantMiniMaps");
 
 const DIFFICULTIES = {
-  beginner: { rows: 9, cols: 9, mines: 10, label: "초급" },
-  intermediate: { rows: 16, cols: 16, mines: 40, label: "중급" },
-  expert: { rows: 16, cols: 30, mines: 99, label: "고급" },
+  beginner: { rows: 9, cols: 9, mines: 10, lives: 3, label: "초급" },
+  intermediate: { rows: 16, cols: 16, mines: 40, lives: 2, label: "중급" },
+  expert: { rows: 16, cols: 30, mines: 99, lives: 1, label: "고급" },
 };
 
 let settings = DIFFICULTIES.beginner;
@@ -34,6 +39,7 @@ let gameState = "ready";
 let firstMove = true;
 let flagMode = false;
 let flagsPlaced = 0;
+let hitMines = 0;
 let openedCells = 0;
 let elapsed = 0;
 let timerId = null;
@@ -41,6 +47,9 @@ let assistantEnabled = false;
 let assistantAnalysis = null;
 let assistantTargetIndex = null;
 let assistantDepth = "simple";
+let lifeModeEnabled = false;
+let livesRemaining = settings.lives;
+let autoOpenEnabled = false;
 
 function createGame() {
   stopTimer();
@@ -50,6 +59,7 @@ function createGame() {
     row: Math.floor(index / settings.cols),
     col: index % settings.cols,
     mine: false,
+    hit: false,
     open: false,
     flagged: false,
     adjacent: 0,
@@ -58,7 +68,9 @@ function createGame() {
   gameState = "ready";
   firstMove = true;
   flagsPlaced = 0;
+  hitMines = 0;
   openedCells = 0;
+  livesRemaining = settings.lives;
   elapsed = 0;
   timerEl.textContent = "000";
   messageEl.textContent = "첫 칸을 열어 시작하세요";
@@ -84,6 +96,7 @@ function createGame() {
   }
   boardEl.append(fragment);
   updateMineCount();
+  updateLifeDisplay();
   updateAssistantIdleMessage();
 }
 
@@ -152,7 +165,7 @@ function openCell(index) {
   }
 
   if (cell.mine) {
-    loseGame(cell);
+    hitMine(cell);
     return;
   }
 
@@ -183,25 +196,62 @@ function floodOpen(startCell) {
 }
 
 function openAroundNumber(cell) {
-  if (!cell.open || cell.adjacent === 0) return;
+  if (!cell.open || cell.mine || cell.adjacent === 0) return false;
 
   const neighbors = getNeighbors(cell.index);
   const flagged = neighbors.filter((neighbor) => neighbor.flagged).length;
-  if (flagged !== cell.adjacent) return;
+  if (flagged !== cell.adjacent) return false;
+  let changed = false;
 
   for (const neighbor of neighbors) {
     if (!neighbor.flagged && !neighbor.open) {
       if (neighbor.mine) {
-        loseGame(neighbor);
-        return;
+        changed = hitMine(neighbor) || changed;
+        if (gameState === "lost") return true;
+      } else {
+        const openedBefore = openedCells;
+        floodOpen(neighbor);
+        changed = openedCells > openedBefore || changed;
       }
-      floodOpen(neighbor);
     }
   }
 
+  if (!changed) return false;
   renderBoard();
   checkWin();
   invalidateAssistantAnalysis();
+  return true;
+}
+
+function runAutoOpen() {
+  if (!autoOpenEnabled || gameState !== "playing") return;
+
+  let changed = true;
+  let passes = 0;
+
+  while (changed && gameState === "playing" && passes < cells.length) {
+    changed = false;
+    passes += 1;
+
+    for (const cell of cells) {
+      if (!cell.open || cell.mine || cell.adjacent === 0) continue;
+      const neighbors = getNeighbors(cell.index);
+      const flagged = neighbors.filter((neighbor) => neighbor.flagged).length;
+      const hasClosedNeighbor = neighbors.some(
+        (neighbor) => !neighbor.open && !neighbor.flagged,
+      );
+
+      if (
+        flagged === cell.adjacent &&
+        hasClosedNeighbor &&
+        openAroundNumber(cell)
+      ) {
+        changed = true;
+      }
+
+      if (gameState !== "playing") break;
+    }
+  }
 }
 
 function toggleFlag(index) {
@@ -218,7 +268,34 @@ function toggleFlag(index) {
   invalidateAssistantAnalysis();
 }
 
-function loseGame(triggerCell) {
+function hitMine(cell) {
+  if (cell.open) return false;
+
+  cell.open = true;
+  cell.hit = true;
+  hitMines += 1;
+  updateMineCount();
+  invalidateAssistantAnalysis();
+
+  if (!lifeModeEnabled) {
+    loseGame(cell, false);
+    return true;
+  }
+
+  livesRemaining -= 1;
+  updateLifeDisplay();
+
+  if (livesRemaining <= 0) {
+    loseGame(cell, true);
+    return true;
+  }
+
+  renderCell(cell);
+  messageEl.textContent = `지뢰를 밟았습니다. 라이프 ${livesRemaining}개가 남았습니다.`;
+  return true;
+}
+
+function loseGame(triggerCell, livesExhausted = false) {
   gameState = "lost";
   stopTimer();
 
@@ -231,7 +308,9 @@ function loseGame(triggerCell) {
   renderBoard();
   const button = getButton(triggerCell.index);
   button.classList.add("mine");
-  messageEl.textContent = "지뢰를 밟았습니다. 새 게임으로 다시 도전하세요.";
+  messageEl.textContent = livesExhausted
+    ? "라이프를 모두 사용했습니다. 새 게임으로 다시 도전하세요."
+    : "지뢰를 밟았습니다. 새 게임으로 다시 도전하세요.";
   invalidateAssistantAnalysis();
 }
 
@@ -243,7 +322,7 @@ function checkWin() {
   stopTimer();
 
   for (const cell of cells) {
-    if (cell.mine && !cell.flagged) {
+    if (cell.mine && !cell.flagged && !cell.open) {
       cell.flagged = true;
       flagsPlaced += 1;
     }
@@ -271,6 +350,7 @@ function renderCell(cell) {
     button.classList.add("open");
     if (cell.mine) {
       button.classList.add("mine");
+      if (cell.hit) button.classList.add("hit-mine");
     } else if (cell.adjacent > 0) {
       button.textContent = cell.adjacent;
       button.classList.add(`n${cell.adjacent}`);
@@ -304,12 +384,13 @@ function getAssistantAnalysis() {
     assistantAnalysis = window.MinesweeperAssistant.analyze({
       rows: settings.rows,
       cols: settings.cols,
-      mines: settings.mines,
+      mines: settings.mines - hitMines,
       cells: cells.map((cell) => ({
         index: cell.index,
         row: cell.row,
         col: cell.col,
         open: cell.open,
+        isClue: cell.open && !cell.mine,
         flagged: cell.flagged,
         adjacent: cell.adjacent,
       })),
@@ -394,6 +475,33 @@ function showAssistantForCell(index) {
               index,
               ...getNeighbors(index).map((neighbor) => neighbor.index),
             ],
+          },
+        ],
+      },
+    );
+    return;
+  }
+
+  if (cell.open && cell.mine) {
+    setAssistantResult(
+      "mine",
+      "발견된 지뢰",
+      "이미 밟아서 공개된 지뢰입니다. 남은 라이프와 숨은 지뢰 수에 반영되었습니다.",
+      button,
+      [],
+      {
+        technique: "공개된 정보",
+        formula: `남은 라이프 ${livesRemaining}개`,
+        principle:
+          "이미 공개된 지뢰는 이후 숫자 제약과 남은 지뢰 수 계산에서 제외됩니다.",
+        steps: [
+          {
+            text: "이 칸에서 지뢰가 공개되었습니다.",
+            indices: [index],
+          },
+          {
+            text: "같은 지뢰로 라이프를 다시 잃지 않습니다.",
+            indices: [index],
           },
         ],
       },
@@ -698,7 +806,11 @@ function createAssistantMiniMap({
       miniCell.tabIndex = 0;
       miniCell.dataset.sourceIndex = index;
 
-      if (cell.open) {
+      if (cell.open && cell.mine) {
+        miniCell.classList.add("scenario-mine");
+        symbol = "●";
+        state = "이미 발견된 지뢰";
+      } else if (cell.open) {
         miniCell.classList.add("open");
         symbol = cell.adjacent > 0 ? String(cell.adjacent) : "";
         state = `열린 숫자 ${cell.adjacent}`;
@@ -824,7 +936,15 @@ function handleAssistantLeave() {
 }
 
 function updateMineCount() {
-  mineCountEl.textContent = String(settings.mines - flagsPlaced).padStart(2, "0");
+  mineCountEl.textContent = String(
+    Math.max(0, settings.mines - flagsPlaced - hitMines),
+  ).padStart(2, "0");
+}
+
+function updateLifeDisplay() {
+  lifeStatusEl.hidden = !lifeModeEnabled;
+  statusGridEl.classList.toggle("life-enabled", lifeModeEnabled);
+  lifeCountEl.textContent = `${livesRemaining} / ${settings.lives}`;
 }
 
 function startTimer() {
@@ -856,6 +976,7 @@ function handleBoardClick(event) {
     openCell(index);
   }
 
+  runAutoOpen();
   showAssistantForCell(index);
 }
 
@@ -866,6 +987,7 @@ function handleContextMenu(event) {
   event.preventDefault();
   const index = Number(button.dataset.index);
   toggleFlag(index);
+  runAutoOpen();
   showAssistantForCell(index);
 }
 
@@ -877,6 +999,7 @@ function handleKeyDown(event) {
   if (event.key.toLowerCase() === "f") {
     event.preventDefault();
     toggleFlag(index);
+    runAutoOpen();
     showAssistantForCell(index);
   }
 }
@@ -885,6 +1008,24 @@ function toggleFlagMode() {
   flagMode = !flagMode;
   flagModeButton.setAttribute("aria-pressed", String(flagMode));
   messageEl.textContent = flagMode ? "깃발 모드가 켜졌습니다" : "열기 모드가 켜졌습니다";
+}
+
+function toggleLifeMode() {
+  lifeModeEnabled = !lifeModeEnabled;
+  lifeModeButton.setAttribute("aria-pressed", String(lifeModeEnabled));
+  createGame();
+  messageEl.textContent = lifeModeEnabled
+    ? `${settings.label} 라이프 모드: ${settings.lives}개의 라이프로 시작합니다.`
+    : "라이프 모드를 껐습니다. 지뢰를 밟으면 즉시 패배합니다.";
+}
+
+function toggleAutoOpen() {
+  autoOpenEnabled = !autoOpenEnabled;
+  autoOpenButton.setAttribute("aria-pressed", String(autoOpenEnabled));
+  messageEl.textContent = autoOpenEnabled
+    ? "자동 개방을 켰습니다. 숫자와 주변 깃발 수가 같으면 자동으로 엽니다."
+    : "자동 개방을 껐습니다.";
+  runAutoOpen();
 }
 
 boardEl.addEventListener("click", handleBoardClick);
@@ -896,6 +1037,8 @@ boardEl.addEventListener("mouseleave", handleAssistantLeave);
 difficultyEl.addEventListener("change", createGame);
 newGameButton.addEventListener("click", createGame);
 flagModeButton.addEventListener("click", toggleFlagMode);
+lifeModeButton.addEventListener("click", toggleLifeMode);
+autoOpenButton.addEventListener("click", toggleAutoOpen);
 assistantToggleButton.addEventListener("click", toggleAssistant);
 assistantSimpleButton.addEventListener("click", () =>
   setAssistantDepth("simple"),

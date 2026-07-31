@@ -176,7 +176,7 @@
     const constraints = [];
 
     for (const cell of board.cells) {
-      if (!cell.open) continue;
+      if (!cell.open || cell.isClue === false) continue;
 
       const variables = getNeighborIndices(cell.index, board.rows, board.cols).filter(
         (index) => !board.cells[index].open,
