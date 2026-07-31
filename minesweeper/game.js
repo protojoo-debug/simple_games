@@ -1,6 +1,8 @@
 const boardEl = document.querySelector("#board");
 const difficultyEl = document.querySelector("#difficulty");
 const newGameButton = document.querySelector("#newGame");
+const cheatToggleButton = document.querySelector("#cheatToggle");
+const cheatIndicatorEl = document.querySelector("#cheatIndicator");
 const flagModeButton = document.querySelector("#flagMode");
 const lifeModeButton = document.querySelector("#lifeMode");
 const autoOpenButton = document.querySelector("#autoOpen");
@@ -47,6 +49,7 @@ let assistantEnabled = false;
 let assistantAnalysis = null;
 let assistantTargetIndex = null;
 let assistantDepth = "simple";
+let cheatEnabled = false;
 let lifeModeEnabled = false;
 let livesRemaining = settings.lives;
 let autoOpenEnabled = false;
@@ -115,9 +118,56 @@ function placeMines(safeIndex) {
     cell.mine = true;
   }
 
+  recalculateAdjacentMines();
+}
+
+function recalculateAdjacentMines() {
   for (const cell of cells) {
     cell.adjacent = getNeighbors(cell.index).filter((neighbor) => neighbor.mine).length;
   }
+}
+
+function preservesRevealedNumbers(source, destination) {
+  for (const revealed of cells) {
+    if (!revealed.open || revealed.mine) continue;
+
+    const neighbors = getNeighbors(revealed.index);
+    const bordersSource = neighbors.some(
+      (neighbor) => neighbor.index === source.index,
+    );
+    const bordersDestination = neighbors.some(
+      (neighbor) => neighbor.index === destination.index,
+    );
+    if (bordersSource !== bordersDestination) return false;
+  }
+
+  return true;
+}
+
+function protectUncertainCell(cell) {
+  if (!cheatEnabled || !cell.mine || firstMove) return false;
+
+  const analysis = getAssistantAnalysis();
+  const result = analysis.results.get(cell.index);
+  if (!analysis.inconsistent && result?.status !== "unknown") return false;
+
+  const destinations = cells.filter(
+    (candidate) =>
+      candidate.index !== cell.index &&
+      !candidate.open &&
+      !candidate.mine &&
+      preservesRevealedNumbers(cell, candidate),
+  );
+  if (destinations.length === 0) return false;
+
+  const destination =
+    destinations[Math.floor(Math.random() * destinations.length)];
+  cell.mine = false;
+  cell.hit = false;
+  destination.mine = true;
+  recalculateAdjacentMines();
+  invalidateAssistantAnalysis();
+  return true;
 }
 
 function shuffle(items) {
@@ -163,6 +213,8 @@ function openCell(index) {
     openAroundNumber(cell);
     return;
   }
+
+  protectUncertainCell(cell);
 
   if (cell.mine) {
     hitMine(cell);
@@ -1014,6 +1066,12 @@ function toggleFlagMode() {
   messageEl.textContent = flagMode ? "깃발 모드가 켜졌습니다" : "열기 모드가 켜졌습니다";
 }
 
+function toggleCheat() {
+  cheatEnabled = !cheatEnabled;
+  cheatToggleButton.setAttribute("aria-pressed", String(cheatEnabled));
+  cheatIndicatorEl.hidden = !cheatEnabled;
+}
+
 function toggleLifeMode() {
   lifeModeEnabled = !lifeModeEnabled;
   lifeModeButton.setAttribute("aria-pressed", String(lifeModeEnabled));
@@ -1040,6 +1098,7 @@ boardEl.addEventListener("focusin", handleAssistantPointer);
 boardEl.addEventListener("mouseleave", handleAssistantLeave);
 difficultyEl.addEventListener("change", createGame);
 newGameButton.addEventListener("click", createGame);
+cheatToggleButton.addEventListener("click", toggleCheat);
 flagModeButton.addEventListener("click", toggleFlagMode);
 lifeModeButton.addEventListener("click", toggleLifeMode);
 autoOpenButton.addEventListener("click", toggleAutoOpen);

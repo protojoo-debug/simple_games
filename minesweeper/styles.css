@@ -76,6 +76,33 @@ h1 {
   letter-spacing: 0;
 }
 
+.game-title {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.cheat-toggle {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.cheat-toggle:focus-visible {
+  outline: 2px solid rgba(35, 111, 82, 0.32);
+  outline-offset: 2px;
+}
+
+.cheat-indicator {
+  margin-left: 0.08em;
+  font-size: 0.12em;
+  opacity: 0.48;
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
