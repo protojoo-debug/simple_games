@@ -29,8 +29,8 @@ const assistantMiniMapsEl = document.querySelector("#assistantMiniMaps");
 
 const DIFFICULTIES = {
   beginner: { rows: 9, cols: 9, mines: 10, lives: 3, label: "초급" },
-  intermediate: { rows: 16, cols: 16, mines: 40, lives: 2, label: "중급" },
-  expert: { rows: 16, cols: 30, mines: 99, lives: 1, label: "고급" },
+  intermediate: { rows: 16, cols: 16, mines: 40, lives: 3, label: "중급" },
+  expert: { rows: 16, cols: 30, mines: 99, lives: 3, label: "고급" },
 };
 
 let settings = DIFFICULTIES.beginner;
