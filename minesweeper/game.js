@@ -195,12 +195,16 @@ function floodOpen(startCell) {
   }
 }
 
+function isConfirmedMine(cell) {
+  return cell.flagged || (cell.open && cell.mine);
+}
+
 function openAroundNumber(cell) {
   if (!cell.open || cell.mine || cell.adjacent === 0) return false;
 
   const neighbors = getNeighbors(cell.index);
-  const flagged = neighbors.filter((neighbor) => neighbor.flagged).length;
-  if (flagged !== cell.adjacent) return false;
+  const confirmedMines = neighbors.filter(isConfirmedMine).length;
+  if (confirmedMines !== cell.adjacent) return false;
   let changed = false;
 
   for (const neighbor of neighbors) {
@@ -236,13 +240,13 @@ function runAutoOpen() {
     for (const cell of cells) {
       if (!cell.open || cell.mine || cell.adjacent === 0) continue;
       const neighbors = getNeighbors(cell.index);
-      const flagged = neighbors.filter((neighbor) => neighbor.flagged).length;
+      const confirmedMines = neighbors.filter(isConfirmedMine).length;
       const hasClosedNeighbor = neighbors.some(
         (neighbor) => !neighbor.open && !neighbor.flagged,
       );
 
       if (
-        flagged === cell.adjacent &&
+        confirmedMines === cell.adjacent &&
         hasClosedNeighbor &&
         openAroundNumber(cell)
       ) {
