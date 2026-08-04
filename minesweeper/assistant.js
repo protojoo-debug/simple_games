@@ -178,14 +178,22 @@
     for (const cell of board.cells) {
       if (!cell.open || cell.isClue === false) continue;
 
-      const variables = getNeighborIndices(cell.index, board.rows, board.cols).filter(
+      const neighborIndices = getNeighborIndices(
+        cell.index,
+        board.rows,
+        board.cols,
+      );
+      const variables = neighborIndices.filter(
         (index) => !board.cells[index].open,
       );
+      const knownMines = neighborIndices.filter(
+        (index) => board.cells[index].knownMine,
+      ).length;
 
       if (variables.length === 0) continue;
       constraints.push({
         cells: variables.sort((a, b) => a - b),
-        mines: cell.adjacent,
+        mines: cell.adjacent - knownMines,
         sourceIndices: [cell.index],
         kind: "number",
       });

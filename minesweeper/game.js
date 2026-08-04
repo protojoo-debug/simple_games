@@ -35,6 +35,8 @@ const DIFFICULTIES = {
   expert: { rows: 16, cols: 30, mines: 99, lives: 3, label: "고급" },
 };
 
+const ASSISTANT_HOVER_DELAY = 500;
+
 let settings = DIFFICULTIES.beginner;
 let cells = [];
 let gameState = "ready";
@@ -49,6 +51,8 @@ let assistantEnabled = false;
 let assistantAnalysis = null;
 let assistantTargetIndex = null;
 let assistantDepth = "simple";
+let assistantHoverTimer = null;
+let assistantHoverIndex = null;
 let cheatEnabled = false;
 let lifeModeEnabled = false;
 let livesRemaining = settings.lives;
@@ -447,6 +451,7 @@ function getAssistantAnalysis() {
         col: cell.col,
         open: cell.open,
         isClue: cell.open && !cell.mine,
+        knownMine: cell.open && cell.mine,
         flagged: cell.flagged,
         adjacent: cell.adjacent,
       })),
@@ -481,7 +486,7 @@ function updateAssistantIdleMessage() {
       "첫 클릭은 지뢰가 없도록 보장됩니다. 아무 칸이나 선택해 게임을 시작하세요.";
   } else {
     assistantReasonEl.textContent =
-      "닫힌 칸에 마우스를 올리거나 키보드로 초점을 옮기면 판단 근거를 알려드립니다.";
+      "닫힌 칸에 마우스를 0.5초 동안 올리거나 키보드로 초점을 옮기면 판단 근거를 알려드립니다.";
   }
 }
 
@@ -633,11 +638,17 @@ function showAssistantForCell(index) {
         ? " 깃발은 사용자 표시일 뿐, 아직 논리적으로 확정되지 않았습니다."
         : " 현재 깃발 표시는 논리적 판단과 일치합니다."
     : "";
+  const summary =
+    result.status === "mine"
+      ? "주변 숫자 조건을 모두 맞추려면 이 칸에는 반드시 지뢰가 있어야 합니다. 깃발로 표시하세요."
+      : result.status === "safe"
+        ? "주변 숫자 조건을 모두 비교하면 이 칸에는 지뢰가 놓일 수 없습니다. 열어도 됩니다."
+        : "현재 공개된 숫자만으로는 안전한 경우와 지뢰인 경우가 모두 가능합니다. 다른 영역을 먼저 확인하세요.";
 
   setAssistantResult(
     result.status,
     verdict,
-    `${result.reason}${flagNote}`,
+    `${summary}${flagNote}`,
     button,
     result.relatedIndices,
     result.details,
@@ -722,20 +733,37 @@ function renderAssistantDetails(details, targetIndex = null, status = null) {
     return;
   }
 
-  assistantTechniqueEl.textContent = details.technique;
+  assistantTechniqueEl.textContent = `판단 방법 · ${details.technique}`;
   assistantFormulaEl.textContent = details.formula;
-  assistantPrincipleEl.textContent = details.principle;
+  assistantPrincipleEl.textContent = `${details.principle} ${getAssistantAction(status)}`;
   renderAssistantMiniMaps(details, targetIndex, status);
 
-  for (const step of details.steps) {
+  details.steps.forEach((step, index) => {
     const item = document.createElement("li");
-    item.textContent = step.text;
+    const label = document.createElement("strong");
+    const description = document.createElement("span");
+    label.className = "assistant-step-label";
+    label.textContent = getAssistantStepLabel(index, details.steps.length);
+    description.textContent = step.text;
+    item.append(label, description);
     item.tabIndex = 0;
     item.dataset.indices = step.indices.join(",");
     assistantStepsEl.append(item);
-  }
+  });
 
   assistantDetailsEl.hidden = assistantDepth !== "detailed";
+}
+
+function getAssistantStepLabel(index, total) {
+  if (index === 0) return "관찰";
+  if (index === total - 1) return "결론";
+  return "계산";
+}
+
+function getAssistantAction(status) {
+  if (status === "safe") return "다음 행동: 이 칸은 열어도 됩니다.";
+  if (status === "mine") return "다음 행동: 닫힌 칸이라면 깃발로 표시하세요.";
+  return "다음 행동: 확정하지 말고 다른 숫자 주변을 먼저 살펴보세요.";
 }
 
 function renderAssistantMiniMaps(details, targetIndex, targetStatus) {
@@ -961,6 +989,7 @@ function handleAssistantMiniLeave(event) {
 }
 
 function clearAssistantTarget() {
+  cancelAssistantHover();
   boardEl
     .querySelectorAll(
       ".assistant-safe, .assistant-mine, .assistant-unknown, .assistant-related-number, .assistant-related-cell, .assistant-step-active, .assistant-step-muted, [data-assistant-label]",
@@ -980,7 +1009,31 @@ function clearAssistantTarget() {
   assistantTargetIndex = null;
 }
 
-function handleAssistantPointer(event) {
+function cancelAssistantHover() {
+  if (assistantHoverTimer !== null) {
+    window.clearTimeout(assistantHoverTimer);
+  }
+  assistantHoverTimer = null;
+  assistantHoverIndex = null;
+}
+
+function handleAssistantHover(event) {
+  const button = event.target.closest(".cell");
+  if (!button || !assistantEnabled) return;
+
+  const index = Number(button.dataset.index);
+  if (index === assistantTargetIndex || index === assistantHoverIndex) return;
+
+  cancelAssistantHover();
+  assistantHoverIndex = index;
+  assistantHoverTimer = window.setTimeout(() => {
+    assistantHoverTimer = null;
+    assistantHoverIndex = null;
+    showAssistantForCell(index);
+  }, ASSISTANT_HOVER_DELAY);
+}
+
+function handleAssistantFocus(event) {
   const button = event.target.closest(".cell");
   if (!button) return;
   showAssistantForCell(Number(button.dataset.index));
@@ -988,6 +1041,7 @@ function handleAssistantPointer(event) {
 
 function handleAssistantLeave() {
   if (!assistantEnabled) return;
+  cancelAssistantHover();
   clearAssistantStepHighlight();
 }
 
@@ -1093,8 +1147,8 @@ function toggleAutoOpen() {
 boardEl.addEventListener("click", handleBoardClick);
 boardEl.addEventListener("contextmenu", handleContextMenu);
 boardEl.addEventListener("keydown", handleKeyDown);
-boardEl.addEventListener("mouseover", handleAssistantPointer);
-boardEl.addEventListener("focusin", handleAssistantPointer);
+boardEl.addEventListener("mouseover", handleAssistantHover);
+boardEl.addEventListener("focusin", handleAssistantFocus);
 boardEl.addEventListener("mouseleave", handleAssistantLeave);
 difficultyEl.addEventListener("change", createGame);
 newGameButton.addEventListener("click", createGame);

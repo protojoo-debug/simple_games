@@ -480,11 +480,21 @@ select:focus-visible,
 }
 
 .assistant-steps li {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
   padding: 6px 8px;
   border-radius: 4px;
   color: var(--ink);
   cursor: default;
   line-height: 1.45;
+}
+
+.assistant-step-label {
+  color: #2678b8;
+  font-size: 0.75rem;
+  line-height: 1.75;
 }
 
 .assistant-steps li:hover,
